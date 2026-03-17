@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline';">
+<title>NexDesk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0a0a0c;
+    --bg2:       #111114;
+    --bg3:       #18181d;
+    --border:    #22222a;
+    --border2:   #2e2e3a;
+    --text:      #e8e8f0;
+    --text2:     #8888a0;
+    --text3:     #44445a;
+    --accent:    #5b6ef5;
+    --accent2:   #7b8eff;
+    --accent-bg: rgba(91,110,245,0.10);
+    --green:     #3de8a0;
+    --red:       #f55b6e;
+    --yellow:    #f5c55b;
+    --radius:    10px;
+  }
+
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Titlebar ───────────────────────────────────────── */
+  .titlebar {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    -webkit-app-region: drag;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 100;
+  }
+  .titlebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--text);
+  }
+  .titlebar-logo svg { flex-shrink: 0; }
+  .titlebar-spacer { flex: 1; }
+  .titlebar-controls {
+    display: flex;
+    gap: 6px;
+    -webkit-app-region: no-drag;
+  }
+  .win-btn {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .win-btn:hover { opacity: 0.8; }
+  .win-btn.close    { background: #ff5f57; }
+  .win-btn.minimize { background: #febc2e; }
+  .win-btn.maximize { background: #28c840; }
+
+  /* ── Layout ─────────────────────────────────────────── */
+  .app { display: flex; height: calc(100vh - 40px); }
+
+  /* ── Sidebar ─────────────────────────────────────────── */
+  .sidebar {
+    width: 220px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+    flex-shrink: 0;
+  }
+  .sidebar-section { padding: 0 12px; margin-bottom: 4px; }
+  .sidebar-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 0 8px;
+    margin-bottom: 6px;
+    margin-top: 16px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    transition: all 0.15s;
+    border: 1px solid transparent;
+  }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active {
+    background: var(--accent-bg);
+    color: var(--accent2);
+    border-color: rgba(91,110,245,0.2);
+  }
+  .nav-item svg { flex-shrink: 0; opacity: 0.7; }
+  .nav-item.active svg { opacity: 1; }
+  .nav-badge {
+    margin-left: auto;
+    background: var(--accent);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .sidebar-bottom {
+    margin-top: auto;
+    padding: 0 12px;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+  }
+  .device-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: default;
+  }
+  .device-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    flex-shrink: 0;
+  }
+  .device-dot.offline { background: var(--text3); box-shadow: none; }
+  .device-name { font-size: 11px; font-weight: 600; color: var(--text); flex: 1; truncate: ellipsis; overflow: hidden; }
+  .device-status { font-size: 9px; color: var(--text3); font-family: 'IBM Plex Mono', monospace; }
+
+  /* ── Content ─────────────────────────────────────────── */
+  .content { flex: 1; overflow: hidden; position: relative; }
+  .page { position: absolute; inset: 0; overflow-y: auto; display: none; padding: 32px; }
+  .page.active { display: block; }
+
+  /* scrollbar */
+  .page::-webkit-scrollbar { width: 4px; }
+  .page::-webkit-scrollbar-track { background: transparent; }
+  .page::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+  /* ── Page: Connect ───────────────────────────────────── */
+  .page-title {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .page-subtitle { font-size: 13px; color: var(--text2); margin-bottom: 32px; }
+
+  .connect-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--border2); }
+
+  .card-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* My ID display */
+  .my-id-display {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: var(--text);
+    margin-bottom: 16px;
+    line-height: 1;
+  }
+  .my-id-display span { color: var(--accent2); }
+
+  .id-actions { display: flex; gap: 8px; }
+  .btn-sm {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    color: var(--text2);
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'Syne', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-sm:hover { border-color: var(--accent); color: var(--accent2); background: var(--accent-bg); }
+
+  /* Temp password */
+  .temp-pw-box {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .temp-pw {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    color: var(--green);
+  }
+  .temp-pw-empty { font-size: 13px; color: var(--text3); }
+  .pw-timer {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--yellow);
+  }
+
+  /* Connect form */
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    margin-bottom: 6px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .field input {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .field input:focus { border-color: var(--accent); }
+  .field input::placeholder { color: var(--text3); }
+
+  .btn-primary {
+    width: 100%;
+    padding: 12px;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'Syne', sans-serif;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(91,110,245,0.3); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* ── History ─────────────────────────────────────────── */
+  .history-list { display: flex; flex-direction: column; gap: 8px; }
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: default;
+    transition: border-color 0.15s;
+  }
+  .history-item:hover { border-color: var(--border2); }
+  .history-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: var(--accent-bg);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .history-info { flex: 1; min-width: 0; }
+  .history-id {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+  .history-meta { font-size: 11px; color: var(--text3); }
+  .history-duration {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+  }
+  .history-connect-btn {
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: var(--text2);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    transition: all 0.15s;
+  }
+  .history-connect-btn:hover { border-color: var(--accent); color: var(--accent2); }
+
+  /* ── Settings ────────────────────────────────────────── */
+  .settings-group { margin-bottom: 28px; }
+  .settings-group-title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .setting-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-label { flex: 1; }
+  .setting-label strong { display: block; font-size: 13px; font-weight: 500; color: var(--text); }
+  .setting-label span { font-size: 11px; color: var(--text3); }
+  .toggle {
+    width: 36px; height: 20px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--text3);
+    transition: all 0.2s;
+  }
+  .toggle.on { background: var(--accent); border-color: var(--accent); }
+  .toggle.on::after { left: 18px; background: #fff; }
+  .select-input {
+    padding: 6px 10px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 12px;
+    font-family: 'Syne', sans-serif;
+    outline: none;
+    cursor: pointer;
+  }
+
+  /* ── Toast ───────────────────────────────────────────── */
+  #toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    z-index: 1000;
+    transition: transform 0.25s cubic-bezier(.34,1.56,.64,1);
+    white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.success { border-color: var(--green); color: var(--green); }
+  #toast.error   { border-color: var(--red);   color: var(--red); }
+
+  /* ── Status bar ──────────────────────────────────────── */
+  .status-bar {
+    position: fixed;
+    bottom: 0; left: 220px; right: 0;
+    height: 24px;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+  }
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 4px var(--green);
+    display: inline-block;
+    margin-right: 4px;
+  }
+  .status-dot.error { background: var(--red); box-shadow: 0 0 4px var(--red); }
+
+  /* ── Loading spinner ─────────────────────────────────── */
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Animations ──────────────────────────────────────── */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .page.active { animation: fadeIn 0.2s ease; }
+  .card { animation: fadeIn 0.25s ease both; }
+  .card:nth-child(2) { animation-delay: 0.05s; }
+</style>
+</head>
+<body>
+
+<!-- Titlebar -->
+<div class="titlebar">
+  <div class="titlebar-logo">
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <rect x="1" y="1" width="16" height="16" rx="4" fill="#5b6ef5" opacity="0.15"/>
+      <rect x="1" y="1" width="16" height="16" rx="4" stroke="#5b6ef5" stroke-width="1.5"/>
+      <path d="M5 9h8M9 5v8" stroke="#7b8eff" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    NexDesk
+  </div>
+  <div class="titlebar-spacer"></div>
+  <div class="titlebar-controls">
+    <button class="win-btn minimize" onclick="api.win.minimize()"></button>
+    <button class="win-btn maximize" onclick="api.win.maximize()"></button>
+    <button class="win-btn close"    onclick="api.win.close()"></button>
+  </div>
+</div>
+
+<!-- App -->
+<div class="app">
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-section">
+      <div class="nav-item active" onclick="showPage('connect')" id="nav-connect">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="3" cy="7" r="2" stroke="currentColor" stroke-width="1.3"/><circle cx="11" cy="7" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M5 7h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Connexion
+      </div>
+      <div class="nav-item" onclick="showPage('history')" id="nav-history">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M7 4v3.5l2 1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Historique
+      </div>
+      <div class="nav-item" onclick="showPage('settings')" id="nav-settings">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.9 2.9l1.4 1.4M9.7 9.7l1.4 1.4M2.9 11.1l1.4-1.4M9.7 4.3l1.4-1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Paramètres
+      </div>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="device-chip">
+        <div class="device-dot" id="status-dot"></div>
+        <div>
+          <div class="device-name" id="sidebar-device-name">Chargement…</div>
+          <div class="device-status" id="sidebar-status">hors ligne</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- Page: Connect -->
+    <div class="page active" id="page-connect">
+      <div class="page-title">Connexion à distance</div>
+      <div class="page-subtitle">Connectez-vous à un appareil distant ou partagez votre accès.</div>
+
+      <div class="connect-grid">
+
+        <!-- My device card -->
+        <div class="card">
+          <div class="card-title">Votre appareil</div>
+          <div class="my-id-display" id="my-device-id">
+            <span>···</span>-<span>···</span>-<span>···</span>
+          </div>
+          <div class="id-actions" style="margin-bottom:20px">
+            <button class="btn-sm" onclick="copyId()">
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="1" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M3 3V2a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H8" stroke="currentColor" stroke-width="1.2"/></svg>
+              Copier l'ID
+            </button>
+            <button class="btn-sm" onclick="refreshId()">
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1.5 5.5A4 4 0 0 1 9 3M9.5 5.5A4 4 0 0 1 2 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M9 1v2h-2M2 9v-2H4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Régénérer
+            </button>
+          </div>
+
+          <div class="card-title">Mot de passe temporaire</div>
+          <div class="temp-pw-box">
+            <div id="temp-pw-display" class="temp-pw-empty">Non généré</div>
+            <div id="pw-timer" class="pw-timer"></div>
+          </div>
+          <button class="btn-sm" onclick="generateTempPw()" style="width:100%;justify-content:center;margin-bottom:10px">
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Générer un mot de passe
+          </button>
+
+          <div style="margin-top:16px">
+            <div class="field">
+              <label>Mot de passe permanent</label>
+              <input type="password" id="perm-pw-input" placeholder="Définir un mot de passe permanent…">
+            </div>
+            <button class="btn-sm" onclick="setPermanentPw()" style="width:100%;justify-content:center">
+              Enregistrer
+            </button>
+          </div>
+        </div>
+
+        <!-- Remote connect card -->
+        <div class="card">
+          <div class="card-title">Se connecter à distance</div>
+          <div class="field">
+            <label>ID de l'appareil distant</label>
+            <input type="text" id="remote-id" placeholder="XXX-XXX-XXX" maxlength="11"
+              oninput="formatId(this)" onkeydown="if(event.key==='Enter')connect()">
+          </div>
+          <div class="field">
+            <label>Mot de passe</label>
+            <input type="password" id="remote-pw" placeholder="Mot de passe…"
+              onkeydown="if(event.key==='Enter')connect()">
+          </div>
+          <button class="btn-primary" id="connect-btn" onclick="connect()">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Se connecter
+          </button>
+
+          <!-- Quick connect history -->
+          <div id="recent-targets" style="margin-top:20px"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Page: History -->
+    <div class="page" id="page-history">
+      <div class="page-title">Historique</div>
+      <div class="page-subtitle">Vos dernières sessions de contrôle à distance.</div>
+      <div class="history-list" id="history-list">
+        <div style="color:var(--text3);font-size:13px;text-align:center;padding:40px 0">
+          Aucune session enregistrée
+        </div>
+      </div>
+    </div>
+
+    <!-- Page: Settings -->
+    <div class="page" id="page-settings">
+      <div class="page-title">Paramètres</div>
+      <div class="page-subtitle">Configurez votre expérience NexDesk.</div>
+
+      <div class="settings-group">
+        <div class="settings-group-title">Appareil</div>
+        <div class="setting-row">
+          <div class="setting-label">
+            <strong>Nom de l'appareil</strong>
+            <span>Visible par les autres appareils</span>
+          </div>
+          <input type="text" id="device-name-input" class="select-input" style="width:180px" onchange="saveSetting('deviceName', this.value)">
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">
+            <strong>URL de l'API</strong>
+            <span>Serveur backend NexDesk</span>
+          </div>
+          <input type="text" id="api-url-input" class="select-input" style="width:200px" onchange="saveSetting('apiUrl', this.value)">
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-title">Session</div>
+        <div class="setting-row">
+          <div class="setting-label">
+            <strong>Qualité vidéo</strong>
+            <span>Équilibre entre qualité et performance</span>
+          </div>
+          <select class="select-input" id="quality-select" onchange="saveSetting('quality', this.value)">
+            <option value="performance">Performance (15 FPS)</option>
+            <option value="balanced"   selected>Équilibré (24 FPS)</option>
+            <option value="quality">Qualité (30 FPS)</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">
+            <strong>Démarrer avec le système</strong>
+            <span>Lancer NexDesk au démarrage</span>
+          </div>
+          <div class="toggle" id="autostart-toggle" onclick="toggleSetting('startWithOs', this)"></div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">
+            <strong>Accès non surveillé</strong>
+            <span>Autoriser les connexions sans confirmation</span>
+          </div>
+          <div class="toggle" id="unattended-toggle" onclick="toggleSetting('allowUnattended', this)"></div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-title">À propos</div>
+        <div class="setting-row">
+          <div class="setting-label">
+            <strong>Version</strong>
+          </div>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3)">1.0.0</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /app -->
+
+<!-- Status bar -->
+<div class="status-bar">
+  <div><span class="status-dot" id="api-dot"></span><span id="api-status">Connexion…</span></div>
+  <div id="status-version">NexDesk v1.0.0</div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+'use strict';
+
+// ── State ────────────────────────────────────────────────
+let config     = {};
+let token      = null;
+let pwTimer    = null;
+let pwExpiry   = null;
+let apiOnline  = false;
+
+// ── Init ─────────────────────────────────────────────────
+async function init() {
+  config = await api.config.all();
+  token  = await api.auth.getToken();
+
+  renderDeviceId();
+  loadSettings();
+  await checkApi();
+  await tryAutoRegister();
+  loadHistory();
+}
+
+function renderDeviceId() {
+  const id = config.deviceId || '???-???-???';
+  const [a, b, c] = id.split('-');
+  document.getElementById('my-device-id').innerHTML =
+    `<span>${a}</span>-<span>${b}</span>-<span>${c}</span>`;
+  document.getElementById('sidebar-device-name').textContent = config.deviceName || id;
+}
+
+// ── API check ────────────────────────────────────────────
+async function checkApi() {
+  try {
+    const res = await fetch(`${config.apiUrl}/health`);
+    apiOnline = res.ok;
+  } catch {
+    apiOnline = false;
+  }
+  const dot    = document.getElementById('api-dot');
+  const status = document.getElementById('api-status');
+  if (apiOnline) {
+    dot.className    = 'status-dot';
+    status.textContent = 'API connectée';
+  } else {
+    dot.className    = 'status-dot error';
+    status.textContent = 'API hors ligne';
+  }
+}
+
+// ── Auto-register ─────────────────────────────────────────
+async function tryAutoRegister() {
+  if (!apiOnline) return;
+  try {
+    const res = await fetch(`${config.apiUrl}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        device_id:   config.deviceId,
+        name:        config.deviceName,
+        public_key:  'RSA_PEM_PLACEHOLDER',
+        platform:    detectPlatform(),
+        app_version: '1.0.0',
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      token = data.access_token;
+      await api.auth.setToken(token);
+      document.getElementById('status-dot').className = 'device-dot';
+      document.getElementById('sidebar-status').textContent = 'en ligne';
+    }
+  } catch(e) {
+    console.error('Register failed:', e);
+  }
+}
+
+// ── Navigation ────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`page-${name}`).classList.add('active');
+  document.getElementById(`nav-${name}`).classList.add('active');
+  if (name === 'history') loadHistory();
+}
+
+// ── Copy ID ───────────────────────────────────────────────
+function copyId() {
+  navigator.clipboard.writeText(config.deviceId);
+  toast('ID copié dans le presse-papier', 'success');
+}
+
+function refreshId() {
+  // Just copies in this demo — real implementation would regenerate
+  toast('ID copié', 'success');
+}
+
+// ── Format ID input ───────────────────────────────────────
+function formatId(input) {
+  let v = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (v.length > 3)  v = v.slice(0,3) + '-' + v.slice(3);
+  if (v.length > 7)  v = v.slice(0,7) + '-' + v.slice(7);
+  if (v.length > 11) v = v.slice(0,11);
+  input.value = v;
+}
+
+// ── Generate temp password ────────────────────────────────
+async function generateTempPw() {
+  if (!token) { toast('Non connecté à l\'API', 'error'); return; }
+  try {
+    const res = await fetch(`${config.apiUrl}/auth/generate-password`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    document.getElementById('temp-pw-display').textContent = data.password;
+    document.getElementById('temp-pw-display').className = 'temp-pw';
+    pwExpiry = new Date(data.expires_at);
+    startPwTimer();
+    toast('Mot de passe généré', 'success');
+  } catch(e) {
+    toast('Erreur: ' + e.message, 'error');
+  }
+}
+
+function startPwTimer() {
+  if (pwTimer) clearInterval(pwTimer);
+  pwTimer = setInterval(() => {
+    const remaining = Math.max(0, Math.round((pwExpiry - Date.now()) / 1000));
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    document.getElementById('pw-timer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+    if (remaining === 0) {
+      clearInterval(pwTimer);
+      document.getElementById('temp-pw-display').textContent = 'Expiré';
+      document.getElementById('temp-pw-display').className = 'temp-pw-empty';
+      document.getElementById('pw-timer').textContent = '';
+    }
+  }, 1000);
+}
+
+// ── Set permanent password ────────────────────────────────
+async function setPermanentPw() {
+  const pw = document.getElementById('perm-pw-input').value.trim();
+  if (!pw || pw.length < 6) { toast('Min. 6 caractères', 'error'); return; }
+  if (!token) { toast('Non connecté', 'error'); return; }
+  try {
+    const res = await fetch(`${config.apiUrl}/auth/set-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ password: pw, permanent: true }),
+    });
+    if (!res.ok) throw new Error();
+    document.getElementById('perm-pw-input').value = '';
+    toast('Mot de passe permanent enregistré', 'success');
+  } catch { toast('Erreur lors de l\'enregistrement', 'error'); }
+}
+
+// ── Connect to remote ─────────────────────────────────────
+async function connect() {
+  const id = document.getElementById('remote-id').value.trim();
+  const pw = document.getElementById('remote-pw').value;
+
+  if (!id.match(/^[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}$/)) {
+    toast('Format ID invalide (XXX-XXX-XXX)', 'error'); return;
+  }
+  if (!pw) { toast('Mot de passe requis', 'error'); return; }
+  if (!token) { toast('Non connecté à l\'API', 'error'); return; }
+
+  const btn = document.getElementById('connect-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Connexion…';
+
+  try {
+    const res = await fetch(`${config.apiUrl}/auth/connect`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ target_id: id, password: pw }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Erreur de connexion');
+
+    // Save to recent
+    saveRecentTarget(id);
+
+    // Open session window
+    await api.session.open({
+      targetId: id, password: pw, token,
+      apiUrl: config.apiUrl, signalingUrl: config.signalingUrl,
+      myId: config.deviceId, quality: config.quality,
+      requiresConfirmation: data.requires_confirmation,
+      publicKey: data.public_key,
+    });
+
+    document.getElementById('remote-pw').value = '';
+    toast('Session ouverte', 'success');
+  } catch(e) {
+    toast(e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Se connecter';
+  }
+}
+
+// ── Recent targets ────────────────────────────────────────
+function saveRecentTarget(id) {
+  const recent = JSON.parse(localStorage.getItem('recent-targets') || '[]');
+  const filtered = recent.filter(t => t.id !== id);
+  filtered.unshift({ id, ts: Date.now() });
+  localStorage.setItem('recent-targets', JSON.stringify(filtered.slice(0, 3)));
+}
+
+function renderRecentTargets() {
+  const recent = JSON.parse(localStorage.getItem('recent-targets') || '[]');
+  const container = document.getElementById('recent-targets');
+  if (!recent.length) { container.innerHTML = ''; return; }
+  container.innerHTML = `
+    <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Récents</div>
+    ${recent.map(t => `
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text);flex:1">${t.id}</span>
+        <button class="btn-sm" onclick="document.getElementById('remote-id').value='${t.id}'">Utiliser</button>
+      </div>
+    `).join('')}
+  `;
+}
+
+// ── History ───────────────────────────────────────────────
+async function loadHistory() {
+  if (!token || !apiOnline) return;
+  try {
+    const res = await fetch(`${config.apiUrl}/sessions/history?limit=30`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    renderHistory(data);
+  } catch(e) { console.error(e); }
+}
+
+function renderHistory(sessions) {
+  const list = document.getElementById('history-list');
+  if (!sessions.length) {
+    list.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:40px 0">Aucune session enregistrée</div>';
+    return;
+  }
+  list.innerHTML = sessions.map(s => `
+    <div class="history-item">
+      <div class="history-icon">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="4" width="12" height="8" rx="2" stroke="#7b8eff" stroke-width="1.3"/><path d="M5 12v2M11 12v2M3 14h10" stroke="#7b8eff" stroke-width="1.3" stroke-linecap="round"/></svg>
+      </div>
+      <div class="history-info">
+        <div class="history-id">${s.host_id || s.controller_id || 'Inconnu'}</div>
+        <div class="history-meta">${formatDate(s.started_at)} · ${s.status}</div>
+      </div>
+      <div class="history-duration">${formatDuration(s.duration_s)}</div>
+      <button class="history-connect-btn" onclick="document.getElementById('remote-id').value='${s.host_id||''}';showPage('connect')">
+        Reconnecter
+      </button>
+    </div>
+  `).join('');
+}
+
+// ── Settings ──────────────────────────────────────────────
+async function loadSettings() {
+  document.getElementById('device-name-input').value = config.deviceName || '';
+  document.getElementById('api-url-input').value     = config.apiUrl     || '';
+  document.getElementById('quality-select').value    = config.quality    || 'balanced';
+  if (config.startWithOs)       document.getElementById('autostart-toggle').classList.add('on');
+  if (config.allowUnattended)   document.getElementById('unattended-toggle').classList.add('on');
+  renderRecentTargets();
+}
+
+async function saveSetting(key, val) {
+  await api.config.set(key, val);
+  config[key] = val;
+  if (key === 'deviceName') document.getElementById('sidebar-device-name').textContent = val;
+  toast('Paramètre sauvegardé', 'success');
+}
+
+async function toggleSetting(key, el) {
+  const on = !el.classList.contains('on');
+  el.classList.toggle('on', on);
+  await api.config.set(key, on);
+  config[key] = on;
+}
+
+// ── Toast ─────────────────────────────────────────────────
+let toastTimer = null;
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + type;
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = ''; }, 3000);
+}
+
+// ── Helpers ───────────────────────────────────────────────
+function detectPlatform() {
+  const p = navigator.platform.toLowerCase();
+  if (p.includes('win')) return 'windows';
+  if (p.includes('mac')) return 'macos';
+  return 'linux';
+}
+
+function formatDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+}
+
+function formatDuration(s) {
+  if (!s) return '—';
+  const m = Math.floor(s / 60), sec = s % 60;
+  return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
+}
+
+// ── Start ─────────────────────────────────────────────────
+window.addEventListener('load', init);
+// Refresh API status every 30s
+setInterval(checkApi, 30_000);
+</script>
+</body>
+</html>

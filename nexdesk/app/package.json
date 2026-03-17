@@ -1,0 +1,51 @@
+{
+  "name": "nexdesk",
+  "version": "1.0.0",
+  "description": "NexDesk — Logiciel de contrôle à distance professionnel",
+  "main": "src/main.js",
+  "author": "NexDesk",
+  "license": "PROPRIETARY",
+  "scripts": {
+    "start":       "electron .",
+    "dev":         "cross-env NODE_ENV=development electron . --inspect",
+    "build:win":   "electron-builder --win",
+    "build:mac":   "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
+  },
+  "dependencies": {
+    "electron-store": "^10.0.0"
+  },
+  "devDependencies": {
+    "cross-env":        "^7.0.3",
+    "electron":         "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId":       "com.nexdesk.app",
+    "productName": "NexDesk",
+    "copyright":   "Copyright © 2025 NexDesk",
+    "asar": true,
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["src/**/*", "node_modules/**/*"],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.ico",
+      "requestedExecutionLevel": "requireAdministrator"
+    },
+    "mac": {
+      "target": [{ "target": "dmg", "arch": ["x64", "arm64"] }],
+      "icon": "build/icon.icns",
+      "category": "public.app-category.utilities"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Utility"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "NexDesk"
+    }
+  }
+}
