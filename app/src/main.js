@@ -12,8 +12,8 @@ const store = new Store({
   defaults: {
     deviceId:    generateDeviceId(),
     deviceName:  require('os').hostname(),
-    apiUrl:      'http://localhost:8000',
-    signalingUrl:'http://localhost:7879',
+    apiUrl:      'https://nexdesk-production.up.railway.app',
+    signalingUrl:'https://nexdesk-production-12b3.up.railway.app',
     quality:     'balanced',
     startWithOs: false,
     theme:       'dark',
