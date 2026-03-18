@@ -372,7 +372,7 @@ function initSignaling() {
 
 function connectSocket() {
   socket = io(sessionData.signalingUrl, {
-    transports: ['websocket', 'polling'],
+    transports: ['websocket'],
     auth: { deviceId: sessionData.myId, token: sessionData.token },
   });
 
