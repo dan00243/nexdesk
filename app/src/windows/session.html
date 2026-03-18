@@ -2,8 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://nexdesk-production-12b3.up.railway.app; connect-src 'self' https: wss: ws:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com;"><title>NexDesk — Session</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;500;700&display=swap" rel="stylesheet">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://nexdesk-production-12b3.up.railway.app https://cdn.socket.io; connect-src 'self' https: wss: ws:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com;"><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -407,9 +406,8 @@ api.session.onInit(data => {
 
 // ── Signaling ─────────────────────────────────────────────
 function initSignaling() {
-  // Load Socket.IO dynamically from signaling server
   const script = document.createElement('script');
-  script.src = `${sessionData.signalingUrl}/socket.io/socket.io.js`;
+  script.src = 'https://cdn.socket.io/4.7.5/socket.io.min.js';
   script.onload  = connectSocket;
   script.onerror = () => setStatus('error', 'Serveur de signalisation inaccessible');
   document.head.appendChild(script);
