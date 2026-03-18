@@ -20,6 +20,10 @@ const store = new Store({
   },
 });
 
+// Force update to Railway URLs
+store.set('apiUrl', 'https://nexdesk-production.up.railway.app');
+store.set('signalingUrl', 'https://nexdesk-production-12b3.up.railway.app');
+
 // ── Windows ──────────────────────────────────────────────
 let mainWindow   = null;
 let sessionWindow = null;
