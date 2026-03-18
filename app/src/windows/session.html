@@ -1,28 +1,42 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <script>
-if (typeof globalThis.fetch !== 'function') {
-  globalThis.fetch = (url, opts = {}) => new Promise((res, rej) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open(opts.method || 'GET', url, true);
-    Object.entries(opts.headers || {}).forEach(([k,v]) => xhr.setRequestHeader(k,v));
-    xhr.responseType = 'text';
-    xhr.onload = () => res({
-      ok: xhr.status >= 200 && xhr.status < 300,
-      status: xhr.status,
-      json: () => Promise.resolve(JSON.parse(xhr.responseText)),
-      text: () => Promise.resolve(xhr.responseText),
-    });
-    xhr.onerror = () => rej(new Error('Network error'));
-    xhr.send(opts.body || null);
-  });
-}
-</script>
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: wss: ws:; script-src 'self' 'unsafe-inline' https://cdn.socket.io https://fonts.googleapis.com; connect-src 'self' https: wss: ws:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com;">
 <title>NexDesk — Session</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;500;700&display=swap" rel="stylesheet">
+
+<!-- Fetch polyfill — must run before socket.io loads -->
+<script>
+(function() {
+  if (typeof window.fetch === 'function') return;
+  window.fetch = function(url, options) {
+    options = options || {};
+    return new Promise(function(resolve, reject) {
+      var xhr = new XMLHttpRequest();
+      xhr.open(options.method || 'GET', url, true);
+      var headers = options.headers || {};
+      Object.keys(headers).forEach(function(k) { xhr.setRequestHeader(k, headers[k]); });
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState !== 4) return;
+        var resp = {
+          ok: xhr.status >= 200 && xhr.status < 300,
+          status: xhr.status,
+          statusText: xhr.statusText,
+          headers: { get: function(h) { return xhr.getResponseHeader(h); } },
+          text: function() { return Promise.resolve(xhr.responseText); },
+          json: function() { return Promise.resolve(JSON.parse(xhr.responseText)); },
+        };
+        resolve(resp);
+      };
+      xhr.onerror = function() { reject(new TypeError('Network request failed')); };
+      xhr.ontimeout = function() { reject(new TypeError('Network request timed out')); };
+      xhr.send(options.body !== undefined ? options.body : null);
+    });
+  };
+})();
+</script>
+
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -351,7 +365,6 @@ const ICE_SERVERS = [
   { urls: 'stun:stun1.l.google.com:19302' },
 ];
 
-// ── Init ─────────────────────────────────────────────────
 api.session.onInit(data => {
   sessionData = data;
   document.getElementById('peer-id-display').textContent = data.targetId;
@@ -361,22 +374,17 @@ api.session.onInit(data => {
   initSignaling();
 });
 
-// ── Signaling ─────────────────────────────────────────────
 function initSignaling() {
-  connectSocket();
-}
-
-function connectSocket() {
-  socket = api.io(sessionData.signalingUrl, {
-    transports: ['websocket'],
-    auth: { deviceId: sessionData.myId, token: sessionData.token },
-  });
-  // ... reste inchangé
+  const script = document.createElement('script');
+  script.src = 'https://cdn.socket.io/4.7.5/socket.io.min.js';
+  script.onload = connectSocket;
+  script.onerror = () => setStatus('error', 'Serveur de signalisation inaccessible');
+  document.head.appendChild(script);
 }
 
 function connectSocket() {
   socket = io(sessionData.signalingUrl, {
-    transports: ['websocket'],
+    transports: ['websocket', 'polling'],
     auth: { deviceId: sessionData.myId, token: sessionData.token },
   });
 
@@ -391,7 +399,7 @@ function connectSocket() {
 
   socket.on('connect_error', (err) => {
     console.error('[Socket] Connect error:', err.message);
-    setStatus('error', 'Erreur signalisation: ' + err.message);
+    setStatus('error', 'Erreur: ' + err.message);
   });
 
   socket.on('connection-accepted', ({ sessionId: sid, role }) => {
@@ -409,8 +417,8 @@ function connectSocket() {
 
   socket.on('connection-failed',   ({ reason }) => setStatus('error', reason));
   socket.on('connection-rejected', ({ reason }) => setStatus('error', reason));
-  socket.on('webrtc-offer',  ({ sdp })      => handleOffer(sdp));
-  socket.on('webrtc-answer', ({ sdp })      => handleAnswer(sdp));
+  socket.on('webrtc-offer',  ({ sdp })       => handleOffer(sdp));
+  socket.on('webrtc-answer', ({ sdp })       => handleAnswer(sdp));
   socket.on('webrtc-ice',    ({ candidate }) => addIce(candidate));
   socket.on('chat-message',  ({ from, text, ts }) => appendChat(from, text, ts, false));
   socket.on('peer-disconnected', () => setStatus('error', 'Pair déconnecté'));
@@ -418,7 +426,6 @@ function connectSocket() {
   socket.on('disconnect', () => { if (connected) setStatus('error', 'Déconnecté'); });
 }
 
-// ── WebRTC ────────────────────────────────────────────────
 async function startWebRTC(isController) {
   pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
