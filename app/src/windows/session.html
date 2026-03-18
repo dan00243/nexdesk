@@ -363,11 +363,15 @@ api.session.onInit(data => {
 
 // ── Signaling ─────────────────────────────────────────────
 function initSignaling() {
-  const script = document.createElement('script');
-  script.src = 'https://cdn.socket.io/4.7.5/socket.io.min.js';
-  script.onload = connectSocket;
-  script.onerror = () => setStatus('error', 'Serveur de signalisation inaccessible');
-  document.head.appendChild(script);
+  connectSocket();
+}
+
+function connectSocket() {
+  socket = api.io(sessionData.signalingUrl, {
+    transports: ['websocket'],
+    auth: { deviceId: sessionData.myId, token: sessionData.token },
+  });
+  // ... reste inchangé
 }
 
 function connectSocket() {

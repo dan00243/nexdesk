@@ -48,4 +48,9 @@ contextBridge.exposeInMainWorld('api', {
 
   // External
   openExternal: (url) => ipcRenderer.send('open-external', url),
+  // Socket.IO
+io: (url, opts) => {
+  const { io } = require('socket.io-client');
+  return io(url, opts);
+},
 });
