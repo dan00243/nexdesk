@@ -39,7 +39,7 @@ function createMainWindow() {
     height: 600,
     minWidth:  860,
     minHeight: 520,
-    frame:     false,          // Custom titlebar
+    frame:     false,
     transparent: false,
     backgroundColor: '#0c0c0e',
     show: false,
@@ -48,6 +48,7 @@ function createMainWindow() {
       contextIsolation:     true,
       nodeIntegration:      false,
       webSecurity:          true,
+      sandbox:              false,
     },
     icon: getAppIcon(),
   });
@@ -85,6 +86,7 @@ function createSessionWindow(sessionData) {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      sandbox: false,
     },
   });
 
@@ -97,7 +99,6 @@ function createSessionWindow(sessionData) {
 
   sessionWindow.on('closed', () => {
     sessionWindow = null;
-    // Notify main window
     if (mainWindow) mainWindow.webContents.send('session-closed');
   });
 }
@@ -132,7 +133,6 @@ function updateTray(sessionCount = 0) {
 
 // ── IPC Handlers ─────────────────────────────────────────
 
-// Window controls
 ipcMain.on('win:minimize', () => mainWindow?.minimize());
 ipcMain.on('win:maximize', () => {
   if (!mainWindow) return;
@@ -146,22 +146,18 @@ ipcMain.on('session-win:maximize', () => {
 });
 ipcMain.on('session-win:close', () => sessionWindow?.close());
 
-// Config
 ipcMain.handle('config:get', (_, key) => store.get(key));
 ipcMain.handle('config:set', (_, key, val) => { store.set(key, val); return true; });
 ipcMain.handle('config:all', () => store.store);
 
-// Token management
 ipcMain.handle('auth:set-token', (_, t) => { token = t; return true; });
 ipcMain.handle('auth:get-token', () => token);
 
-// Open session window
 ipcMain.handle('session:open', (_, data) => {
   createSessionWindow(data);
   return true;
 });
 
-// Screen capture sources
 ipcMain.handle('capture:sources', async () => {
   const { desktopCapturer } = require('electron');
   const sources = await desktopCapturer.getSources({
@@ -174,7 +170,6 @@ ipcMain.handle('capture:sources', async () => {
   }));
 });
 
-// Get monitors
 ipcMain.handle('capture:monitors', () => {
   return screen.getAllDisplays().map((d, i) => ({
     index: i,
@@ -184,7 +179,6 @@ ipcMain.handle('capture:monitors', () => {
   }));
 });
 
-// File dialog
 ipcMain.handle('dialog:open-file', async () => {
   if (!mainWindow && !sessionWindow) return null;
   const win = sessionWindow || mainWindow;
@@ -194,7 +188,6 @@ ipcMain.handle('dialog:open-file', async () => {
   return result.canceled ? null : result.filePaths;
 });
 
-// Open external URL
 ipcMain.on('open-external', (_, url) => shell.openExternal(url));
 
 
@@ -203,7 +196,6 @@ app.whenReady().then(() => {
   createMainWindow();
   createTray();
 
-  // Global shortcut — restore main window
   globalShortcut.register('CommandOrControl+Shift+N', () => {
     if (mainWindow) { mainWindow.show(); mainWindow.focus(); }
     else createMainWindow();
