@@ -1,6 +1,24 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+  <script>
+if (typeof globalThis.fetch !== 'function') {
+  globalThis.fetch = (url, opts = {}) => new Promise((res, rej) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(opts.method || 'GET', url, true);
+    Object.entries(opts.headers || {}).forEach(([k,v]) => xhr.setRequestHeader(k,v));
+    xhr.responseType = 'text';
+    xhr.onload = () => res({
+      ok: xhr.status >= 200 && xhr.status < 300,
+      status: xhr.status,
+      json: () => Promise.resolve(JSON.parse(xhr.responseText)),
+      text: () => Promise.resolve(xhr.responseText),
+    });
+    xhr.onerror = () => rej(new Error('Network error'));
+    xhr.send(opts.body || null);
+  });
+}
+</script>
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: wss: ws:; script-src 'self' 'unsafe-inline' https://cdn.socket.io https://fonts.googleapis.com; connect-src 'self' https: wss: ws:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com;">
 <title>NexDesk — Session</title>
