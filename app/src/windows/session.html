@@ -231,6 +231,18 @@
   }
   .btn-reject:hover { background: rgba(245,91,110,0.1); }
 </style>
+<script>
+if (typeof window.fetch !== 'function') {
+  window.fetch = (url, opts = {}) => new Promise((res, rej) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(opts.method || 'GET', url, true);
+    Object.entries(opts.headers || {}).forEach(([k, v]) => xhr.setRequestHeader(k, v));
+    xhr.onload = () => res({ ok: xhr.status >= 200 && xhr.status < 300, json: () => JSON.parse(xhr.responseText), text: () => xhr.responseText });
+    xhr.onerror = () => rej(new Error('Network error'));
+    xhr.send(opts.body || null);
+  });
+}
+</script>
 </head>
 <body>
 
