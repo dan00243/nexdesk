@@ -43,12 +43,12 @@ function createMainWindow() {
     transparent: false,
     backgroundColor: '#0c0c0e',
     show: false,
-  webPreferences: {
-    preload: path.join(__dirname, 'preload.js'),
-    contextIsolation: true,
-    nodeIntegration: false,
-    sandbox: false,
-  },
+    webPreferences: {
+      preload:          path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration:  false,
+      sandbox:          false,
+    },
     icon: getAppIcon(),
   });
 
@@ -82,10 +82,10 @@ function createSessionWindow(sessionData) {
     backgroundColor: '#080809',
     show: false,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: false,
-      nodeIntegration: true,
-      sandbox: false,
+      preload:          path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration:  false,
+      sandbox:          false,
     },
   });
 

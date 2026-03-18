@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
- <meta name="require-node" content="true"> 
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://nexdesk-production-12b3.up.railway.app https://cdn.socket.io; connect-src 'self' https: wss: ws:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com;"><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;500;700&display=swap" rel="stylesheet">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https: wss: ws:; script-src 'self' 'unsafe-inline' https://cdn.socket.io https://fonts.googleapis.com; connect-src 'self' https: wss: ws:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com;">
+<title>NexDesk — Session</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -15,7 +16,6 @@
   }
   html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; -webkit-font-smoothing: antialiased; }
 
-  /* ── Titlebar ── */
   .titlebar {
     height: 38px; display: flex; align-items: center;
     padding: 0 14px; -webkit-app-region: drag;
@@ -23,10 +23,7 @@
     flex-shrink: 0; position: relative; z-index: 100;
   }
   .title-info { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 600; }
-  .peer-id {
-    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
-    color: var(--accent2); letter-spacing: 0.06em;
-  }
+  .peer-id { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent2); letter-spacing: 0.06em; }
   .session-badge {
     background: rgba(61,232,160,0.12); color: var(--green);
     border: 1px solid rgba(61,232,160,0.25);
@@ -35,13 +32,8 @@
   }
   .session-badge.connecting { background: rgba(245,197,91,0.12); color: var(--yellow); border-color: rgba(245,197,91,0.25); }
   .session-badge.error { background: rgba(245,91,110,0.12); color: var(--red); border-color: rgba(245,91,110,0.25); }
-
   .title-spacer { flex: 1; }
-  .title-stats {
-    display: flex; gap: 14px; align-items: center;
-    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
-    color: var(--text3); -webkit-app-region: no-drag;
-  }
+  .title-stats { display: flex; gap: 14px; align-items: center; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text3); -webkit-app-region: no-drag; }
   .stat-item { display: flex; align-items: center; gap: 4px; }
   .stat-good { color: var(--green); }
   .stat-warn { color: var(--yellow); }
@@ -52,20 +44,15 @@
   .win-btn.minimize { background: #febc2e; }
   .win-btn.maximize { background: #28c840; }
 
-  /* ── Layout ── */
   .workspace { display: flex; height: calc(100vh - 38px); }
 
-  /* ── Viewer ── */
   .viewer {
     flex: 1; position: relative; overflow: hidden;
     background: #000; cursor: none;
     display: flex; align-items: center; justify-content: center;
   }
   .viewer.view-only { cursor: default; }
-  #remote-canvas {
-    max-width: 100%; max-height: 100%;
-    display: block; image-rendering: auto;
-  }
+  #remote-canvas { max-width: 100%; max-height: 100%; display: block; image-rendering: auto; }
   .viewer-overlay {
     position: absolute; inset: 0;
     display: flex; flex-direction: column;
@@ -82,7 +69,6 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .overlay-text { font-size: 13px; color: var(--text2); }
 
-  /* Custom cursor dot */
   #cursor-dot {
     position: absolute; width: 10px; height: 10px;
     background: var(--accent2); border-radius: 50%;
@@ -92,7 +78,6 @@
     display: none;
   }
 
-  /* ── Sidebar panel ── */
   .panel {
     width: 260px; display: flex; flex-direction: column;
     background: var(--bg2); border-left: 1px solid var(--border);
@@ -100,11 +85,7 @@
   }
   .panel.collapsed { width: 0; overflow: hidden; }
 
-  /* Panel tabs */
-  .panel-tabs {
-    display: flex; border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-  }
+  .panel-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
   .panel-tab {
     flex: 1; padding: 10px 6px; font-size: 10px; font-weight: 700;
     letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3);
@@ -114,14 +95,12 @@
   .panel-tab:hover { color: var(--text2); }
   .panel-tab.active { color: var(--accent2); border-bottom-color: var(--accent); }
 
-  /* Panel content */
   .panel-body { flex: 1; overflow-y: auto; padding: 14px; }
   .panel-body::-webkit-scrollbar { width: 3px; }
   .panel-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
   .tab-content { display: none; height: 100%; }
   .tab-content.active { display: flex; flex-direction: column; }
 
-  /* ── Chat ── */
   .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
   .chat-messages::-webkit-scrollbar { width: 3px; }
   .chat-messages::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
@@ -146,7 +125,6 @@
   }
   .chat-send:hover { background: var(--accent2); }
 
-  /* ── Files ── */
   .drop-zone {
     border: 2px dashed var(--border2); border-radius: 8px;
     padding: 20px; text-align: center; cursor: pointer;
@@ -156,23 +134,17 @@
   .drop-zone:hover, .drop-zone.dragover { border-color: var(--accent); color: var(--accent2); }
   .drop-zone svg { display: block; margin: 0 auto 6px; opacity: 0.4; }
   .file-list { display: flex; flex-direction: column; gap: 6px; }
-  .file-item {
-    padding: 8px 10px; background: var(--bg3);
-    border: 1px solid var(--border); border-radius: 7px;
-    font-size: 11px;
-  }
+  .file-item { padding: 8px 10px; background: var(--bg3); border: 1px solid var(--border); border-radius: 7px; font-size: 11px; }
   .file-name { color: var(--text); font-weight: 500; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .file-progress { height: 2px; background: var(--border); border-radius: 1px; margin: 4px 0; }
   .file-progress-bar { height: 100%; background: var(--accent); border-radius: 1px; transition: width 0.2s; }
   .file-meta { color: var(--text3); font-family: 'IBM Plex Mono', monospace; font-size: 9px; }
 
-  /* ── Info tab ── */
   .info-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
   .info-row:last-child { border-bottom: none; }
   .info-key { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
   .info-val { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text); }
 
-  /* ── Bottom toolbar ── */
   .toolbar {
     height: 44px; background: var(--bg2); border-top: 1px solid var(--border);
     display: flex; align-items: center; padding: 0 12px; gap: 6px;
@@ -194,7 +166,6 @@
   .toolbar-spacer { flex: 1; }
   .tool-label { font-size: 9px; font-family: 'IBM Plex Mono', monospace; color: var(--text3); padding: 0 4px; }
 
-  /* ── Incoming request overlay ── */
   #incoming-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.7);
     display: none; align-items: center; justify-content: center; z-index: 200;
@@ -218,36 +189,14 @@
   .incoming-sub { font-size: 12px; color: var(--text3); margin-bottom: 24px; }
   .incoming-timer { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--yellow); margin-bottom: 20px; }
   .incoming-actions { display: flex; gap: 10px; }
-  .btn-accept {
-    flex: 1; padding: 10px; border-radius: 8px; border: none;
-    background: var(--green); color: #000; font-weight: 700; font-size: 13px;
-    font-family: 'Syne', sans-serif; cursor: pointer; transition: opacity 0.15s;
-  }
+  .btn-accept { flex: 1; padding: 10px; border-radius: 8px; border: none; background: var(--green); color: #000; font-weight: 700; font-size: 13px; font-family: 'Syne', sans-serif; cursor: pointer; transition: opacity 0.15s; }
   .btn-accept:hover { opacity: 0.85; }
-  .btn-reject {
-    flex: 1; padding: 10px; border-radius: 8px;
-    border: 1px solid var(--red); background: transparent;
-    color: var(--red); font-weight: 700; font-size: 13px;
-    font-family: 'Syne', sans-serif; cursor: pointer; transition: background 0.15s;
-  }
+  .btn-reject { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--red); background: transparent; color: var(--red); font-weight: 700; font-size: 13px; font-family: 'Syne', sans-serif; cursor: pointer; transition: background 0.15s; }
   .btn-reject:hover { background: rgba(245,91,110,0.1); }
 </style>
-<script>
-if (typeof window.fetch !== 'function') {
-  window.fetch = (url, opts = {}) => new Promise((res, rej) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open(opts.method || 'GET', url, true);
-    Object.entries(opts.headers || {}).forEach(([k, v]) => xhr.setRequestHeader(k, v));
-    xhr.onload = () => res({ ok: xhr.status >= 200 && xhr.status < 300, json: () => JSON.parse(xhr.responseText), text: () => xhr.responseText });
-    xhr.onerror = () => rej(new Error('Network error'));
-    xhr.send(opts.body || null);
-  });
-}
-</script>
 </head>
 <body>
 
-<!-- Titlebar -->
 <div class="titlebar">
   <div class="title-info">
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="8" rx="2" stroke="#5b6ef5" stroke-width="1.3"/><path d="M4 10v2M10 10v2M2 12h10" stroke="#5b6ef5" stroke-width="1.3" stroke-linecap="round"/></svg>
@@ -267,22 +216,16 @@ if (typeof window.fetch !== 'function') {
   </div>
 </div>
 
-<!-- Workspace -->
 <div class="workspace">
-
-  <!-- Viewer -->
   <div class="viewer" id="viewer" tabindex="0">
     <canvas id="remote-canvas"></canvas>
     <div id="cursor-dot"></div>
-
-    <!-- Overlay while connecting -->
     <div class="viewer-overlay" id="viewer-overlay">
       <div class="overlay-spinner"></div>
       <div class="overlay-text" id="overlay-text">Connexion en cours…</div>
     </div>
   </div>
 
-  <!-- Side panel -->
   <div class="panel" id="side-panel">
     <div class="panel-tabs">
       <button class="panel-tab active" onclick="switchTab('chat')" id="tab-chat">Chat</button>
@@ -290,8 +233,6 @@ if (typeof window.fetch !== 'function') {
       <button class="panel-tab"        onclick="switchTab('info')" id="tab-info">Info</button>
     </div>
     <div class="panel-body">
-
-      <!-- Chat -->
       <div class="tab-content active" id="tab-chat-content" style="height:calc(100vh - 38px - 40px - 44px)">
         <div class="chat-messages" id="chat-messages"></div>
         <div class="chat-input-row">
@@ -302,7 +243,6 @@ if (typeof window.fetch !== 'function') {
         </div>
       </div>
 
-      <!-- Files -->
       <div class="tab-content" id="tab-files-content">
         <div class="drop-zone" id="drop-zone" onclick="selectFiles()">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 3v10M8 9l4-4 4 4M3 17v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -311,7 +251,6 @@ if (typeof window.fetch !== 'function') {
         <div class="file-list" id="file-list"></div>
       </div>
 
-      <!-- Info -->
       <div class="tab-content" id="tab-info-content">
         <div class="info-row"><span class="info-key">Session</span><span class="info-val" id="info-session-id">—</span></div>
         <div class="info-row"><span class="info-key">Appareil distant</span><span class="info-val" id="info-peer">—</span></div>
@@ -326,44 +265,33 @@ if (typeof window.fetch !== 'function') {
       </div>
     </div>
   </div>
-
 </div>
 
-<!-- Toolbar (bottom, above panel) -->
 <div class="toolbar" id="toolbar">
-  <!-- View only toggle -->
   <button class="tool-btn" id="btn-viewonly" title="Mode lecture seule" onclick="toggleViewOnly()">
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M1 7s2-4 6-4 6 4 6 4-2 4-6 4-6-4-6-4Z" stroke="currentColor" stroke-width="1.3"/></svg>
   </button>
-  <!-- Quality -->
   <button class="tool-btn" title="Qualité" onclick="cycleQuality()">
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="4" width="2" height="6" rx="1" fill="currentColor"/><rect x="4.5" y="2.5" width="2" height="7.5" rx="1" fill="currentColor"/><rect x="8" y="1" width="2" height="9" rx="1" fill="currentColor"/><rect x="11.5" y="3" width="2" height="7" rx="1" fill="currentColor" opacity="0.3"/></svg>
   </button>
-  <!-- Fullscreen -->
   <button class="tool-btn" title="Plein écran" onclick="toggleFullscreen()">
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5V2h3M10 2h3v3M1 9v3h3M10 12h3v-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>
-  <!-- Send clipboard -->
   <button class="tool-btn" title="Envoyer le presse-papier" onclick="sendClipboard()">
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="3" y="2" width="8" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 2V1a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1" stroke="currentColor" stroke-width="1.3"/></svg>
   </button>
-
   <div class="tool-sep"></div>
   <span class="tool-label" id="quality-label">BALANCED</span>
   <div class="toolbar-spacer"></div>
-
-  <!-- Panel toggle -->
   <button class="tool-btn active" id="btn-panel" title="Panneau" onclick="togglePanel()">
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M9 1v12" stroke="currentColor" stroke-width="1.3"/></svg>
   </button>
   <div class="tool-sep"></div>
-  <!-- Disconnect -->
   <button class="tool-btn danger" title="Déconnecter" onclick="disconnect()">
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 2H3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2M10 10l3-3-3-3M13 7H5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>
 </div>
 
-<!-- Incoming connection overlay -->
 <div id="incoming-overlay">
   <div class="incoming-card">
     <div class="incoming-icon">
@@ -383,19 +311,17 @@ if (typeof window.fetch !== 'function') {
 <script>
 'use strict';
 
-// ── State ────────────────────────────────────────────────
 let sessionData   = null;
-let pc            = null;   // RTCPeerConnection
-let dataChannel   = null;   // Control events
-let mediaChannel  = null;   // Video frames
-let socket        = null;   // Socket.IO
+let pc            = null;
+let dataChannel   = null;
+let mediaChannel  = null;
+let socket        = null;
 let sessionId     = null;
 let viewOnly      = false;
 let connected     = false;
 let panelOpen     = true;
 let startTime     = null;
 let durationTimer = null;
-let statsTimer    = null;
 let fpsCount      = 0;
 let fpsLastTs     = Date.now();
 let currentFps    = 0;
@@ -425,30 +351,31 @@ function initSignaling() {
   script.onerror = () => setStatus('error', 'Serveur de signalisation inaccessible');
   document.head.appendChild(script);
 }
+
 function connectSocket() {
   socket = io(sessionData.signalingUrl, {
-    transports: ['websocket'],
+    transports: ['websocket', 'polling'],
     auth: { deviceId: sessionData.myId, token: sessionData.token },
   });
 
   socket.on('connect', () => {
-    console.log('[Socket] Connected');
+    console.log('[Socket] Connected to', sessionData.signalingUrl);
     socket.emit('request-connection', {
       targetId: sessionData.targetId,
       sessionToken: sessionData.password,
     });
-    setStatus('connecting', 'En attente d\'acceptation…');
+    setStatus('connecting', "En attente d'acceptation…");
   });
 
-  socket.on('connection-accepted', ({ sessionId: sid, role, peerId }) => {
+  socket.on('connect_error', (err) => {
+    console.error('[Socket] Connect error:', err.message);
+    setStatus('error', 'Erreur signalisation: ' + err.message);
+  });
+
+  socket.on('connection-accepted', ({ sessionId: sid, role }) => {
     sessionId = sid;
     document.getElementById('info-session-id').textContent = sid.slice(0, 16) + '…';
-    if (role === 'controller') {
-      startWebRTC(true);
-    } else {
-      // We are host — wait for offer
-      startWebRTC(false);
-    }
+    startWebRTC(role === 'controller');
   });
 
   socket.on('incoming-connection', ({ requestId, controllerId }) => {
@@ -458,14 +385,12 @@ function connectSocket() {
     document.getElementById('incoming-overlay').classList.add('show');
   });
 
-  socket.on('connection-failed', ({ reason }) => setStatus('error', reason));
+  socket.on('connection-failed',   ({ reason }) => setStatus('error', reason));
   socket.on('connection-rejected', ({ reason }) => setStatus('error', reason));
-
-  socket.on('webrtc-offer',  ({ sdp })       => handleOffer(sdp));
-  socket.on('webrtc-answer', ({ sdp })        => handleAnswer(sdp));
-  socket.on('webrtc-ice',    ({ candidate })  => addIce(candidate));
-
-  socket.on('chat-message', ({ from, text, ts }) => appendChat(from, text, ts, false));
+  socket.on('webrtc-offer',  ({ sdp })      => handleOffer(sdp));
+  socket.on('webrtc-answer', ({ sdp })      => handleAnswer(sdp));
+  socket.on('webrtc-ice',    ({ candidate }) => addIce(candidate));
+  socket.on('chat-message',  ({ from, text, ts }) => appendChat(from, text, ts, false));
   socket.on('peer-disconnected', () => setStatus('error', 'Pair déconnecté'));
   socket.on('session-ended', () => window.close());
   socket.on('disconnect', () => { if (connected) setStatus('error', 'Déconnecté'); });
@@ -486,17 +411,14 @@ async function startWebRTC(isController) {
   };
 
   if (isController) {
-    // Controller creates data channels
-    dataChannel = pc.createDataChannel('control', { ordered: true });
+    dataChannel  = pc.createDataChannel('control', { ordered: true });
     setupDataChannel(dataChannel);
     mediaChannel = pc.createDataChannel('media', { ordered: false, maxRetransmits: 0 });
     setupMediaChannel(mediaChannel);
-
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
     socket.emit('webrtc-offer', { sessionId, sdp: offer });
   } else {
-    // Host receives channels
     pc.ondatachannel = ({ channel }) => {
       if (channel.label === 'control') setupDataChannel(channel);
       if (channel.label === 'media')   setupMediaChannel(channel);
@@ -519,10 +441,9 @@ async function addIce(candidate) {
   if (pc?.remoteDescription) await pc.addIceCandidate(new RTCIceCandidate(candidate));
 }
 
-// ── Data channel ──────────────────────────────────────────
 function setupDataChannel(dc) {
   dataChannel = dc;
-  dc.onopen  = () => console.log('[DC] Control open');
+  dc.onopen = () => console.log('[DC] Control open');
   dc.onmessage = ({ data }) => {
     try {
       const ev = JSON.parse(data);
@@ -535,11 +456,10 @@ function setupDataChannel(dc) {
 function setupMediaChannel(mc) {
   mediaChannel = mc;
   mc.binaryType = 'arraybuffer';
-  mc.onopen  = () => console.log('[DC] Media open');
+  mc.onopen = () => console.log('[DC] Media open');
   mc.onmessage = ({ data }) => renderFrame(data);
 }
 
-// ── Connected ─────────────────────────────────────────────
 function onConnected() {
   connected = true;
   startTime = Date.now();
@@ -550,28 +470,19 @@ function onConnected() {
   startPingLoop();
 }
 
-// ── Render remote frame ────────────────────────────────────
 function renderFrame(data) {
-  // Parse: [4 bytes meta len][meta json][jpeg data]
   const view    = new DataView(data);
   const metaLen = view.getUint32(0, true);
   const metaArr = new Uint8Array(data, 4, metaLen);
   const meta    = JSON.parse(new TextDecoder().decode(metaArr));
   const jpeg    = new Uint8Array(data, 4 + metaLen);
-
   bytesReceived += data.byteLength;
-
-  // FPS
   fpsCount++;
   const now = Date.now();
   if (now - fpsLastTs >= 1000) {
-    currentFps = fpsCount;
-    fpsCount   = 0;
-    fpsLastTs  = now;
+    currentFps = fpsCount; fpsCount = 0; fpsLastTs = now;
     updateStats();
   }
-
-  // Draw to canvas
   const canvas = document.getElementById('remote-canvas');
   const ctx    = canvas.getContext('2d');
   const blob   = new Blob([jpeg], { type: 'image/jpeg' });
@@ -587,23 +498,19 @@ function renderFrame(data) {
   img.src = url;
 }
 
-// ── Input capture (controller side) ───────────────────────
 function setupInputCapture() {
   if (viewOnly) return;
   const viewer = document.getElementById('viewer');
   const cursor = document.getElementById('cursor-dot');
   cursor.style.display = 'block';
-
-  const canvas  = document.getElementById('remote-canvas');
+  const canvas    = document.getElementById('remote-canvas');
   const modifiers = new Set();
 
   const pos = (e) => {
     const rect = canvas.getBoundingClientRect();
-    const sx   = (canvas.width  || rect.width)  / rect.width;
-    const sy   = (canvas.height || rect.height) / rect.height;
     return {
-      x: Math.round((e.clientX - rect.left) * sx),
-      y: Math.round((e.clientY - rect.top)  * sy),
+      x: Math.round((e.clientX - rect.left) * ((canvas.width || rect.width) / rect.width)),
+      y: Math.round((e.clientY - rect.top)  * ((canvas.height || rect.height) / rect.height)),
     };
   };
 
@@ -630,7 +537,6 @@ function setupInputCapture() {
     if (['Control','Shift','Alt','Meta'].includes(e.key)) { modifiers.delete(e.key); return; }
     sendControl('keyup', { key: e.key, code: e.code, modifiers: [...modifiers] });
   });
-
   viewer.focus();
   canvas.style.cursor = 'none';
 }
@@ -640,7 +546,6 @@ function sendControl(type, data = {}) {
   dataChannel.send(JSON.stringify({ type, ...data, ts: Date.now() }));
 }
 
-// ── Chat ──────────────────────────────────────────────────
 function appendChat(from, text, ts, isMe) {
   const msgs = document.getElementById('chat-messages');
   const div  = document.createElement('div');
@@ -665,7 +570,6 @@ function sendChat() {
   }
 }
 
-// ── Files ─────────────────────────────────────────────────
 function selectFiles() { api.dialog.openFile().then(paths => { if (paths) paths.forEach(sendFile); }); }
 
 function setupDragDrop() {
@@ -679,21 +583,15 @@ function setupDragDrop() {
   });
 }
 
-function sendFile(path) {
-  // File transfer UI placeholder (full impl via chunked upload API)
+function sendFile(filePath) {
   const list = document.getElementById('file-list');
-  const name = path.split(/[\\/]/).pop();
+  const name = filePath.split(/[\\/]/).pop();
   const item = document.createElement('div');
   item.className = 'file-item';
-  item.innerHTML = `
-    <div class="file-name">${name}</div>
-    <div class="file-progress"><div class="file-progress-bar" style="width:0%" id="fp-${Date.now()}"></div></div>
-    <div class="file-meta">Préparation…</div>
-  `;
+  item.innerHTML = `<div class="file-name">${name}</div><div class="file-progress"><div class="file-progress-bar" style="width:0%"></div></div><div class="file-meta">Préparation…</div>`;
   list.prepend(item);
 }
 
-// ── Controls ──────────────────────────────────────────────
 function toggleViewOnly() {
   viewOnly = !viewOnly;
   document.getElementById('btn-viewonly').classList.toggle('active', viewOnly);
@@ -736,7 +634,6 @@ function switchTab(name) {
   document.getElementById(`tab-${name}`).classList.add('active');
 }
 
-// ── Incoming request ──────────────────────────────────────
 let incomingTimer = null;
 function startIncomingTimer(seconds) {
   let remain = seconds;
@@ -759,7 +656,6 @@ function rejectConnection() {
   socket.emit('reject-connection', { requestId: pendingReqId });
 }
 
-// ── Disconnect ────────────────────────────────────────────
 function disconnect() {
   socket?.emit('end-session', { sessionId });
   pc?.close();
@@ -767,7 +663,6 @@ function disconnect() {
   window.close();
 }
 
-// ── Stats & timers ────────────────────────────────────────
 function startTimers() {
   durationTimer = setInterval(() => {
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
@@ -800,7 +695,6 @@ function updateStats() {
   document.getElementById('info-bytes').textContent = formatBytes(bytesReceived);
 }
 
-// ── Status ────────────────────────────────────────────────
 function setStatus(state, msg) {
   const badge = document.getElementById('connection-badge');
   badge.textContent = msg;
@@ -812,14 +706,12 @@ function setStatus(state, msg) {
   }
 }
 
-// ── Helpers ───────────────────────────────────────────────
 function formatBytes(b) {
   if (b < 1024) return `${b} B`;
-  if (b < 1024*1024) return `${(b/1024).toFixed(1)} KB`;
-  return `${(b/1024/1024).toFixed(2)} MB`;
+  if (b < 1048576) return `${(b/1024).toFixed(1)} KB`;
+  return `${(b/1048576).toFixed(2)} MB`;
 }
 
-// ── Start ─────────────────────────────────────────────────
 setupDragDrop();
 </script>
 </body>
