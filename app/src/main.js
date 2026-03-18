@@ -84,8 +84,8 @@ function createSessionWindow(sessionData) {
     show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
-      nodeIntegration: false,
+      contextIsolation: false,
+      nodeIntegration: true,
       sandbox: false,
     },
   });
