@@ -419,9 +419,11 @@ api.session.onInit(data => {
 
 // ── Signaling ─────────────────────────────────────────────
 function initSignaling() {
-  const { io } = require('socket.io-client');
-  window.io = io;
-  connectSocket();
+  const script = document.createElement('script');
+  script.src = 'https://cdn.socket.io/4.7.5/socket.io.min.js';
+  script.onload = connectSocket;
+  script.onerror = () => setStatus('error', 'Serveur de signalisation inaccessible');
+  document.head.appendChild(script);
 }
 function connectSocket() {
   socket = io(sessionData.signalingUrl, {

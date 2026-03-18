@@ -43,13 +43,12 @@ function createMainWindow() {
     transparent: false,
     backgroundColor: '#0c0c0e',
     show: false,
-    webPreferences: {
-      preload:              path.join(__dirname, 'preload.js'),
-      contextIsolation:     true,
-      nodeIntegration:      false,
-      webSecurity:          true,
-      sandbox:              false,
-    },
+  webPreferences: {
+    preload: path.join(__dirname, 'preload.js'),
+    contextIsolation: true,
+    nodeIntegration: false,
+    sandbox: false,
+  },
     icon: getAppIcon(),
   });
 
